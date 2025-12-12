@@ -85,6 +85,233 @@ const initialEvents: Event[] = [
 ]
 
 export default function TerritoryManagementApp() {
+  // Interactive Map Component
+function InteractiveMapView({ 
+  events, 
+  clients, 
+  onEventClick 
+}: { 
+  events: Event[]
+  clients: Client[]
+  onEventClick: (event: Event) => void 
+}) {
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [hoveredEvent, setHoveredEvent] = useState<string | null>(null)
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true)
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -0.1 : 0.1
+    setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)))
+  }
+
+  const resetView = () => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }
+
+  return (
+    <div className="relative">
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-2 space-y-2">
+        <button
+          onClick={() => setZoom(prev => Math.min(3, prev + 0.2))}
+          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 font-bold"
+        >
+          +
+        </button>
+        <div className="w-8 h-8 flex items-center justify-center text-xs text-gray-600">
+          {Math.round(zoom * 100)}%
+        </div>
+        <button
+          onClick={() => setZoom(prev => Math.max(0.5, prev - 0.2))}
+          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 font-bold"
+        >
+          −
+        </button>
+        <button
+          onClick={resetView}
+          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 text-xs"
+          title="Reset view"
+        >
+          ⟲
+        </button>
+      </div>
+
+      {/* Map Container */}
+      <div 
+        className="relative bg-gradient-to-br from-blue-50 to-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px] cursor-move"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+      >
+        <div 
+          className="absolute inset-0 transition-transform duration-100"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: 'center center'
+          }}
+        >
+          <div className="relative w-full h-full">
+            {/* Grid Background */}
+            <div className="absolute inset-0 opacity-20">
+              <svg width="100%" height="100%">
+                <defs>
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="gray" strokeWidth="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+              </svg>
+            </div>
+
+            {/* Events */}
+            {events.map(event => {
+              const client = clients.find(c => c.id === event.clientId)
+              const hasConflicts = event.conflicts.length > 0
+              const isHovered = hoveredEvent === event.id
+              
+              return (
+                <div
+                  key={event.id}
+                  className="absolute transition-all duration-200"
+                  style={{
+                    left: `${((event.longitude + 74.0060) / 0.5) * 100}%`,
+                    top: `${((40.8 - event.latitude) / 0.2) * 100}%`,
+                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.2)' : 'scale(1)'}`,
+                    zIndex: isHovered ? 20 : 10
+                  }}
+                  onMouseEnter={() => setHoveredEvent(event.id)}
+                  onMouseLeave={() => setHoveredEvent(null)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEventClick(event)
+                  }}
+                >
+                  {/* 15-mile radius circle */}
+                  <div
+                    className={`absolute rounded-full border-2 transition-opacity ${
+                      hasConflicts 
+                        ? 'bg-red-500 border-red-600' 
+                        : 'bg-blue-500 border-blue-600'
+                    }`}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      opacity: isHovered ? 0.3 : 0.15
+                    }}
+                  />
+                  
+                  {/* Event marker */}
+                  <div
+                    className={`w-10 h-10 rounded-full border-3 shadow-lg flex items-center justify-center cursor-pointer transition-all ${
+                      hasConflicts
+                        ? 'bg-red-500 border-red-700 ring-4 ring-red-200'
+                        : 'border-white ring-4 ring-white'
+                    }`}
+                    style={{ 
+                      backgroundColor: hasConflicts ? undefined : client?.color,
+                      boxShadow: isHovered ? '0 10px 25px rgba(0,0,0,0.3)' : '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    <MapPin className="w-5 h-5 text-white" />
+                  </div>
+                  
+                  {/* Tooltip */}
+                  {isHovered && (
+                    <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-4 whitespace-nowrap z-30 border-2 border-gray-200 animate-in fade-in slide-in-from-left-2 duration-200">
+                      <div className="flex items-start gap-3">
+                        <div 
+                          className="w-3 h-3 rounded-full mt-1 flex-shrink-0" 
+                          style={{ backgroundColor: client?.color }}
+                        />
+                        <div>
+                          <p className="font-semibold text-base">{event.eventName}</p>
+                          <p className="text-sm text-gray-600">{client?.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">Zip: {event.zipCode}</p>
+                          <p className="text-xs text-gray-500">{event.eventDate} at {event.eventTime}</p>
+                          {hasConflicts && (
+                            <div className="flex items-center gap-1 mt-2 text-red-600">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span className="text-xs font-medium">
+                                {event.conflicts.length} conflict(s)
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-xs text-blue-600 mt-2 font-medium">Click to edit</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        
+        {/* Legend */}
+        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 space-y-2 max-w-xs z-10">
+          <p className="font-semibold text-sm mb-2">Legend</p>
+          <div className="space-y-1.5">
+            {clients.slice(0, 5).map(client => (
+              <div key={client.id} className="flex items-center space-x-2">
+                <div 
+                  className="w-4 h-4 rounded-full border-2 border-white shadow flex-shrink-0" 
+                  style={{ backgroundColor: client.color }} 
+                />
+                <span className="text-xs truncate">{client.name}</span>
+              </div>
+            ))}
+            <div className="flex items-center space-x-2 pt-2 border-t">
+              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow flex-shrink-0" />
+              <span className="text-xs">Has Conflicts</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-3 pt-2 border-t">
+            🖱️ Drag to pan • 🔍 Scroll to zoom
+          </p>
+        </div>
+
+        {/* Empty State */}
+        {events.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg font-medium">No events to display</p>
+              <p className="text-gray-400 text-sm mt-2">Add your first event to see it on the map</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
   const [activeTab, setActiveTab] = useState<'map' | 'events' | 'clients'>('map')
   const [clients, setClients] = useState<Client[]>(initialClients)
   const [events, setEvents] = useState<Event[]>(initialEvents)
@@ -492,15 +719,27 @@ export default function TerritoryManagementApp() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'map' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Territory Map</h2>
-                  <p className="text-gray-600 text-sm mt-1">Visual representation of all scheduled events and their 15-mile radius zones</p>
-                </div>
-              </div>
+        {{activeTab === 'map' && (
+  <div className="space-y-6">
+    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold">Territory Map</h2>
+          <p className="text-gray-600 text-sm mt-1">Click and drag to pan, scroll to zoom, click markers for details</p>
+        </div>
+      </div>
+      
+      <InteractiveMapView 
+        events={displayedEvents}
+        clients={clients}
+        onEventClick={(event) => {
+          setSelectedEvent(event)
+          setShowEventForm(true)
+        }}
+      />
+    </div>
+  </div>
+)}
               
               <div className="relative bg-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px]">
                 <div className="absolute inset-0">
