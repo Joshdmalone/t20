@@ -84,8 +84,7 @@ const initialEvents: Event[] = [
   }
 ]
 
-export default function TerritoryManagementApp() {
-  // Interactive Map Component
+// Interactive Map Component
 function InteractiveMapView({ 
   events, 
   clients, 
@@ -132,7 +131,6 @@ function InteractiveMapView({
 
   return (
     <div className="relative">
-      {/* Zoom Controls */}
       <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-2 space-y-2">
         <button
           onClick={() => setZoom(prev => Math.min(3, prev + 0.2))}
@@ -158,7 +156,6 @@ function InteractiveMapView({
         </button>
       </div>
 
-      {/* Map Container */}
       <div 
         className="relative bg-gradient-to-br from-blue-50 to-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px] cursor-move"
         onMouseDown={handleMouseDown}
@@ -175,7 +172,6 @@ function InteractiveMapView({
           }}
         >
           <div className="relative w-full h-full">
-            {/* Grid Background */}
             <div className="absolute inset-0 opacity-20">
               <svg width="100%" height="100%">
                 <defs>
@@ -187,7 +183,6 @@ function InteractiveMapView({
               </svg>
             </div>
 
-            {/* Events */}
             {events.map(event => {
               const client = clients.find(c => c.id === event.clientId)
               const hasConflicts = event.conflicts.length > 0
@@ -210,7 +205,6 @@ function InteractiveMapView({
                     onEventClick(event)
                   }}
                 >
-                  {/* 15-mile radius circle */}
                   <div
                     className={`absolute rounded-full border-2 transition-opacity ${
                       hasConflicts 
@@ -227,7 +221,6 @@ function InteractiveMapView({
                     }}
                   />
                   
-                  {/* Event marker */}
                   <div
                     className={`w-10 h-10 rounded-full border-3 shadow-lg flex items-center justify-center cursor-pointer transition-all ${
                       hasConflicts
@@ -242,9 +235,8 @@ function InteractiveMapView({
                     <MapPin className="w-5 h-5 text-white" />
                   </div>
                   
-                  {/* Tooltip */}
                   {isHovered && (
-                    <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-4 whitespace-nowrap z-30 border-2 border-gray-200 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-4 whitespace-nowrap z-30 border-2 border-gray-200">
                       <div className="flex items-start gap-3">
                         <div 
                           className="w-3 h-3 rounded-full mt-1 flex-shrink-0" 
@@ -274,7 +266,6 @@ function InteractiveMapView({
           </div>
         </div>
         
-        {/* Legend */}
         <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 space-y-2 max-w-xs z-10">
           <p className="font-semibold text-sm mb-2">Legend</p>
           <div className="space-y-1.5">
@@ -297,7 +288,6 @@ function InteractiveMapView({
           </p>
         </div>
 
-        {/* Empty State */}
         {events.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
@@ -309,9 +299,10 @@ function InteractiveMapView({
         )}
       </div>
     </div>
-  </div>
-)}
+  )
+}
 
+export default function TerritoryManagementApp() {
   const [activeTab, setActiveTab] = useState<'map' | 'events' | 'clients'>('map')
   const [clients, setClients] = useState<Client[]>(initialClients)
   const [events, setEvents] = useState<Event[]>(initialEvents)
@@ -719,103 +710,24 @@ function InteractiveMapView({
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {{activeTab === 'map' && (
-  <div className="space-y-6">
-    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-semibold">Territory Map</h2>
-          <p className="text-gray-600 text-sm mt-1">Click and drag to pan, scroll to zoom, click markers for details</p>
-        </div>
-      </div>
-      
-      <InteractiveMapView 
-        events={displayedEvents}
-        clients={clients}
-        onEventClick={(event) => {
-          setSelectedEvent(event)
-          setShowEventForm(true)
-        }}
-      />
-    </div>
-  </div>
-)}
-              
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px]">
-                <div className="absolute inset-0">
-                  <div className="relative w-full h-full">
-                    {displayedEvents.map(event => {
-                      const client = clients.find(c => c.id === event.clientId)
-                      const hasConflicts = event.conflicts.length > 0
-                      
-                      return (
-                        <div
-                          key={event.id}
-                          className="absolute cursor-pointer group"
-                          style={{
-                            left: `${((event.longitude + 74.0060) / 0.5) * 100}%`,
-                            top: `${((40.8 - event.latitude) / 0.2) * 100}%`,
-                            transform: 'translate(-50%, -50%)'
-                          }}
-                          onClick={() => {
-                            setSelectedEvent(event)
-                            setActiveTab('events')
-                          }}
-                        >
-                          <div
-                            className={`absolute rounded-full border-2 opacity-20 ${
-                              hasConflicts ? 'bg-red-500 border-red-600' : 'bg-blue-500 border-blue-600'
-                            }`}
-                            style={{
-                              width: '120px',
-                              height: '120px',
-                              left: '50%',
-                              top: '50%',
-                              transform: 'translate(-50%, -50%)'
-                            }}
-                          />
-                          
-                          <div
-                            className={`w-8 h-8 rounded-full border-2 shadow-lg flex items-center justify-center ${
-                              hasConflicts ? 'bg-red-500 border-red-700' : 'border-gray-300'
-                            }`}
-                            style={{ backgroundColor: hasConflicts ? undefined : client?.color }}
-                          >
-                            <MapPin className="w-4 h-4 text-white" />
-                          </div>
-                          
-                          <div className="absolute left-full ml-2 top-0 bg-white rounded-lg shadow-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 hidden md:block">
-                            <p className="font-semibold text-sm">{event.eventName}</p>
-                            <p className="text-xs text-gray-600">{client?.name}</p>
-                            <p className="text-xs text-gray-500">Zip: {event.zipCode}</p>
-                            <p className="text-xs text-gray-500">{event.eventDate}</p>
-                            {hasConflicts && (
-                              <p className="text-xs text-red-600 flex items-center mt-1">
-                                <AlertTriangle className="w-3 h-3 mr-1" />
-                                {event.conflicts.length} conflict(s)
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-                
-                <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 space-y-2 max-w-xs">
-                  <p className="font-semibold text-sm mb-2">Legend</p>
-                  {clients.filter(c => showActiveOnly ? c.isActive : true).slice(0, 5).map(client => (
-                    <div key={client.id} className="flex items-center space-x-2">
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0" style={{ backgroundColor: client.color }} />
-                      <span className="text-xs truncate">{client.name}</span>
-                    </div>
-                  ))}
-                  <div className="flex items-center space-x-2 pt-2 border-t">
-                    <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-red-700 flex-shrink-0" />
-                    <span className="text-xs">Has Conflicts</span>
-                  </div>
+        {activeTab === 'map' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Territory Map</h2>
+                  <p className="text-gray-600 text-sm mt-1">Click and drag to pan, scroll to zoom, click markers for details</p>
                 </div>
               </div>
+              
+              <InteractiveMapView 
+                events={displayedEvents}
+                clients={clients}
+                onEventClick={(event) => {
+                  setSelectedEvent(event)
+                  setShowEventForm(true)
+                }}
+              />
             </div>
           </div>
         )}
