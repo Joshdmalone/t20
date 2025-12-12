@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.3.3",
-    "react": "^19",
-    "react-dom": "^19",
+    "next": "15.1.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.503.0",
     "clsx": "^2.1.1",
