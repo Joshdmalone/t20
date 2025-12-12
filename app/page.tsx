@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { Calendar, MapPin, Users, AlertTriangle, Plus, X, Edit, Trash2, Search, CheckCircle, Upload, Download, Eye, EyeOff } from 'lucide-react'
-
+const InteractiveMap = dynamic(() => import('../components/InteractiveMap'), { ssr: false })
 interface Event {
   id: string
   clientId: string
@@ -493,15 +493,58 @@ export default function TerritoryManagementApp() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'map' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Territory Map</h2>
-                  <p className="text-gray-600 text-sm mt-1">Visual representation of all scheduled events</p>
-                </div>
-              </div>
+       {activeTab === 'map' && (
+  <div className="space-y-6">
+    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+Replace the ENTIRE map view section with this:
+{activeTab === 'map' && (
+  <div className="space-y-6">
+    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold">Territory Map</h2>
+          <p className="text-gray-600 text-sm mt-1">Interactive map showing all scheduled events with 15-mile radius zones</p>
+        </div>
+      </div>
+      
+      <div className="rounded-lg overflow-hidden border border-gray-200">
+        <InteractiveMap 
+          events={displayedEvents} 
+          clients={clients}
+          onEventClick={(event) => {
+            setSelectedEvent(event)
+            setActiveTab('events')
+          }}
+        />
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+        <p className="font-semibold text-sm mb-3">Legend</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {clients.filter(c => showActiveOnly ? c.isActive : true).map(client => (
+            <div key={client.id} className="flex items-center space-x-2">
+              <div 
+                className="w-4 h-4 rounded-full border-2 border-white shadow flex-shrink-0" 
+                style={{ backgroundColor: client.color }} 
+              />
+              <span className="text-xs truncate">{client.name}</span>
+            </div>
+          ))}
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow flex-shrink-0" />
+            <span className="text-xs">Has Conflicts</span>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          • Click markers to view event details<br/>
+          • Circles show 15-mile radius zones<br/>
+          • Zoom and pan to explore the map
+        </p>
+      </div>
+    </div>
+  </div>
+)}
               
               <div className="relative bg-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px]">
                 <div className="absolute inset-0">
