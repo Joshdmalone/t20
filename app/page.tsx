@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { Calendar, MapPin, Users, AlertTriangle, Plus, X, Edit, Trash2, Search, CheckCircle, Upload, Download, Eye, EyeOff } from 'lucide-react'
 
 interface Event {
