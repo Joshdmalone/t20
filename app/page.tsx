@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react'
-import dynamic from 'next/dynamic'
 import { Calendar, MapPin, Users, AlertTriangle, Plus, X, Edit, Trash2, Search, CheckCircle, Upload, Download, Eye, EyeOff } from 'lucide-react'
 const InteractiveMap = dynamic(() => import('../components/InteractiveMap'), { ssr: false })
 interface Event {
@@ -493,59 +492,94 @@ export default function TerritoryManagementApp() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-       {activeTab === 'map' && (
-  <div className="space-y-6">
-    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-Replace the ENTIRE map view section with this:
-{activeTab === 'map' && (
+ {activeTab === 'map' && (
   <div className="space-y-6">
     <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-semibold">Territory Map</h2>
-          <p className="text-gray-600 text-sm mt-1">Interactive map showing all scheduled events with 15-mile radius zones</p>
+          <p className="text-gray-600 text-sm mt-1">Visual representation of all scheduled events and their 15-mile radius zones</p>
         </div>
       </div>
       
-      <div className="rounded-lg overflow-hidden border border-gray-200">
-        <InteractiveMap 
-          events={displayedEvents} 
-          clients={clients}
-          onEventClick={(event) => {
-            setSelectedEvent(event)
-            setActiveTab('events')
-          }}
-        />
-      </div>
-
-      {/* Legend */}
-      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-        <p className="font-semibold text-sm mb-3">Legend</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {clients.filter(c => showActiveOnly ? c.isActive : true).map(client => (
+      <div className="relative bg-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px]">
+        <div className="absolute inset-0">
+          <div className="relative w-full h-full">
+            {displayedEvents.map(event => {
+              const client = clients.find(c => c.id === event.clientId)
+              const hasConflicts = event.conflicts.length > 0
+              
+              return (
+                <div
+                  key={event.id}
+                  className="absolute cursor-pointer group"
+                  style={{
+                    left: `${((event.longitude + 74.0060) / 0.5) * 100}%`,
+                    top: `${((40.8 - event.latitude) / 0.2) * 100}%`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                  onClick={() => {
+                    setSelectedEvent(event)
+                    setActiveTab('events')
+                  }}
+                >
+                  <div
+                    className={`absolute rounded-full border-2 opacity-20 ${
+                      hasConflicts ? 'bg-red-500 border-red-600' : 'bg-blue-500 border-blue-600'
+                    }`}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  />
+                  
+                  <div
+                    className={`w-8 h-8 rounded-full border-2 shadow-lg flex items-center justify-center ${
+                      hasConflicts ? 'bg-red-500 border-red-700' : 'border-gray-300'
+                    }`}
+                    style={{ backgroundColor: hasConflicts ? undefined : client?.color }}
+                  >
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
+                  
+                  <div className="absolute left-full ml-2 top-0 bg-white rounded-lg shadow-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 hidden md:block">
+                    <p className="font-semibold text-sm">{event.eventName}</p>
+                    <p className="text-xs text-gray-600">{client?.name}</p>
+                    <p className="text-xs text-gray-500">Zip: {event.zipCode}</p>
+                    <p className="text-xs text-gray-500">{event.eventDate}</p>
+                    {hasConflicts && (
+                      <p className="text-xs text-red-600 flex items-center mt-1">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        {event.conflicts.length} conflict(s)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        
+        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 space-y-2 max-w-xs">
+          <p className="font-semibold text-sm mb-2">Legend</p>
+          {clients.filter(c => showActiveOnly ? c.isActive : true).slice(0, 5).map(client => (
             <div key={client.id} className="flex items-center space-x-2">
-              <div 
-                className="w-4 h-4 rounded-full border-2 border-white shadow flex-shrink-0" 
-                style={{ backgroundColor: client.color }} 
-              />
+              <div className="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0" style={{ backgroundColor: client.color }} />
               <span className="text-xs truncate">{client.name}</span>
             </div>
           ))}
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow flex-shrink-0" />
+          <div className="flex items-center space-x-2 pt-2 border-t">
+            <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-red-700 flex-shrink-0" />
             <span className="text-xs">Has Conflicts</span>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-3">
-          • Click markers to view event details<br/>
-          • Circles show 15-mile radius zones<br/>
-          • Zoom and pan to explore the map
-        </p>
       </div>
     </div>
   </div>
-)}
-              
+)}   
               <div className="relative bg-gray-100 rounded-lg overflow-hidden h-96 md:h-[600px]">
                 <div className="absolute inset-0">
                   <div className="relative w-full h-full">
